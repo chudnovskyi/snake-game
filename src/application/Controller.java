@@ -4,7 +4,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.net.URL;
-import java.util.List;
 import java.util.ResourceBundle;
 
 import javafx.application.Platform;
@@ -13,7 +12,10 @@ import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ListView;
+import javafx.scene.effect.ColorInput;
+import javafx.scene.effect.Shadow;
 import javafx.scene.layout.AnchorPane;
+import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 
@@ -76,24 +78,15 @@ public class Controller implements Initializable {
 	@FXML
 	private void restart(ActionEvent e) throws InterruptedException {
 		Snake.instance().restart();
-		refreshLeaderboard();
-		youLose.setText(""); // for the case when clicked restart after losing
+		refreshScoreboard();
+		youLose.setText(""); // for the case when uses restart after losing
 	}
 
 	@Override
 	public void initialize(URL arg0, ResourceBundle arg1) {
-		List<String> results = Leaderboard.getLeaderboard();
-		String[] leaderboard = new String[results.size()];
-		int i = 0;
-		for (String result : results) {
-			String[] term = result.split(",");
-			long ms = Long.parseLong(term[0]);
-			int points = Integer.parseInt(term[1]);
-			leaderboard[i] = String.format("%d points | %ds %dms", points, ms / 1000, ms % 1000);
-			i++;
-		}
+		String[] scoreboard = Scoreboard.getScoreboard();
 		Platform.setImplicitExit(false);
-		listView.getItems().addAll(leaderboard);
+		listView.getItems().addAll(scoreboard);
 	}
 
 	@FXML
@@ -111,19 +104,21 @@ public class Controller implements Initializable {
 
 	@FXML
 	private void clearLeaderboard() {
-		Leaderboard.clear();
-		refreshLeaderboard();
+		Scoreboard.clear();
+		refreshScoreboard();
 	}
 
-	public void setCheckBoxOn(Point point) throws InterruptedException {
+	public void setCheckBoxOn(Point p, boolean isHead) throws InterruptedException {
 		int[][] currentField = Field.getCurrentField();
-		int x = point.getX();
-		int y = point.getY();
+		int x = p.getX();
+		int y = p.getY();
 		if (x > 8 || x < 0 || y > 8 || y < 0 || currentField[y][x] == 1)
-			throw new InterruptedException(); // THIS EXCEPTION LEADS TO LOSS AND RECORDING THE RESULT IN THE
-												// LEADERBOARD
+			throw new InterruptedException(); // !los!
 		currentField[y][x] = 1;
-		checkBoxes[y][x].setSelected(true);
+		if (isHead)
+			checkBoxes[y][x].setEffect(new ColorInput(0, 0.3, 21.3, 22, Color.DARKGREEN));
+		else
+			checkBoxes[y][x].setEffect(new ColorInput(0, 0.3, 21.3, 22, Color.GREEN));
 	}
 
 	public void setCheckBoxOff(Point p) {
@@ -131,13 +126,21 @@ public class Controller implements Initializable {
 		int x = p.getX();
 		int y = p.getY();
 		currentField[y][x] = 0;
-		checkBoxes[y][x].setSelected(false);
+		checkBoxes[y][x].setEffect(new Shadow(0, Color.WHITE));
 	}
 
 	public void setAppleCheckBoxOn(Point p) {
 		int x = p.getX();
 		int y = p.getY();
-		checkBoxes[y][x].setSelected(true);
+		checkBoxes[y][x].setEffect(new ColorInput(0, 0.3, 21.3, 22, Color.RED));
+	}
+
+	// we need this method to color a point from head
+	// color to body color without checking for loss.
+	public void setCheckBoxWithoutAddingInMatrix(Point p) {
+		int x = p.getX();
+		int y = p.getY();
+		checkBoxes[y][x].setEffect(new ColorInput(0, 0.3, 21.3, 22, Color.GREEN));
 	}
 
 	public void setYouLose() {
@@ -145,180 +148,99 @@ public class Controller implements Initializable {
 		Snake.instance().interrupt();
 		Snake.instance().updatePlayingTime();
 		if (!Snake.instance().isLose()) { // it won't let one snake to append the result in leaderboard more than once
-			Leaderboard.append(Snake.instance().getPlayingTime(), Snake.instance().getPoints());
+			Scoreboard.append(Snake.instance().getPlayingTime(), Snake.instance().getPoints());
 			Snake.instance().setLose(true);
 		}
 	}
 
-	private void refreshLeaderboard() {
+	private void refreshScoreboard() {
 		listView.getItems().clear();
 		initialize(null, null);
 	}
 
 	private CheckBox[][] checkBoxes = new CheckBox[9][9];
 
-	@FXML
-	private CheckBox check0_0;
-	@FXML
-	private CheckBox check0_1;
-	@FXML
-	private CheckBox check0_2;
-	@FXML
-	private CheckBox check0_3;
-	@FXML
-	private CheckBox check0_4;
-	@FXML
-	private CheckBox check0_5;
-	@FXML
-	private CheckBox check0_6;
-	@FXML
-	private CheckBox check0_7;
-	@FXML
-	private CheckBox check0_8;
-	@FXML
-	private CheckBox check1_0;
-	@FXML
-	private CheckBox check1_1;
-	@FXML
-	private CheckBox check1_2;
-	@FXML
-	private CheckBox check1_3;
-	@FXML
-	private CheckBox check1_4;
-	@FXML
-	private CheckBox check1_5;
-	@FXML
-	private CheckBox check1_6;
-	@FXML
-	private CheckBox check1_7;
-	@FXML
-	private CheckBox check1_8;
-	@FXML
-	private CheckBox check2_0;
-	@FXML
-	private CheckBox check2_1;
-	@FXML
-	private CheckBox check2_2;
-	@FXML
-	private CheckBox check2_3;
-	@FXML
-	private CheckBox check2_4;
-	@FXML
-	private CheckBox check2_5;
-	@FXML
-	private CheckBox check2_6;
-	@FXML
-	private CheckBox check2_7;
-	@FXML
-	private CheckBox check2_8;
-	@FXML
-	private CheckBox check3_0;
-	@FXML
-	private CheckBox check3_1;
-	@FXML
-	private CheckBox check3_2;
-	@FXML
-	private CheckBox check3_3;
-	@FXML
-	private CheckBox check3_4;
-	@FXML
-	private CheckBox check3_5;
-	@FXML
-	private CheckBox check3_6;
-	@FXML
-	private CheckBox check3_7;
-	@FXML
-	private CheckBox check3_8;
-	@FXML
-	private CheckBox check4_0;
-	@FXML
-	private CheckBox check4_1;
-	@FXML
-	private CheckBox check4_2;
-	@FXML
-	private CheckBox check4_3;
-	@FXML
-	private CheckBox check4_4;
-	@FXML
-	private CheckBox check4_5;
-	@FXML
-	private CheckBox check4_6;
-	@FXML
-	private CheckBox check4_7;
-	@FXML
-	private CheckBox check4_8;
-	@FXML
-	private CheckBox check5_0;
-	@FXML
-	private CheckBox check5_1;
-	@FXML
-	private CheckBox check5_2;
-	@FXML
-	private CheckBox check5_3;
-	@FXML
-	private CheckBox check5_4;
-	@FXML
-	private CheckBox check5_5;
-	@FXML
-	private CheckBox check5_6;
-	@FXML
-	private CheckBox check5_7;
-	@FXML
-	private CheckBox check5_8;
-	@FXML
-	private CheckBox check6_0;
-	@FXML
-	private CheckBox check6_1;
-	@FXML
-	private CheckBox check6_2;
-	@FXML
-	private CheckBox check6_3;
-	@FXML
-	private CheckBox check6_4;
-	@FXML
-	private CheckBox check6_5;
-	@FXML
-	private CheckBox check6_6;
-	@FXML
-	private CheckBox check6_7;
-	@FXML
-	private CheckBox check6_8;
-	@FXML
-	private CheckBox check7_0;
-	@FXML
-	private CheckBox check7_1;
-	@FXML
-	private CheckBox check7_2;
-	@FXML
-	private CheckBox check7_3;
-	@FXML
-	private CheckBox check7_4;
-	@FXML
-	private CheckBox check7_5;
-	@FXML
-	private CheckBox check7_6;
-	@FXML
-	private CheckBox check7_7;
-	@FXML
-	private CheckBox check7_8;
-	@FXML
-	private CheckBox check8_0;
-	@FXML
-	private CheckBox check8_1;
-	@FXML
-	private CheckBox check8_2;
-	@FXML
-	private CheckBox check8_3;
-	@FXML
-	private CheckBox check8_4;
-	@FXML
-	private CheckBox check8_5;
-	@FXML
-	private CheckBox check8_6;
-	@FXML
-	private CheckBox check8_7;
-	@FXML
-	private CheckBox check8_8;
+	@FXML private CheckBox check0_0;
+	@FXML private CheckBox check0_1;
+	@FXML private CheckBox check0_2;
+	@FXML private CheckBox check0_3;
+	@FXML private CheckBox check0_4;
+	@FXML private CheckBox check0_5;
+	@FXML private CheckBox check0_6;
+	@FXML private CheckBox check0_7;
+	@FXML private CheckBox check0_8;
+	@FXML private CheckBox check1_0;
+	@FXML private CheckBox check1_1;
+	@FXML private CheckBox check1_2;
+	@FXML private CheckBox check1_3;
+	@FXML private CheckBox check1_4;
+	@FXML private CheckBox check1_5;
+	@FXML private CheckBox check1_6;
+	@FXML private CheckBox check1_7;
+	@FXML private CheckBox check1_8;
+	@FXML private CheckBox check2_0;
+	@FXML private CheckBox check2_1;
+	@FXML private CheckBox check2_2;
+	@FXML private CheckBox check2_3;
+	@FXML private CheckBox check2_4;
+	@FXML private CheckBox check2_5;
+	@FXML private CheckBox check2_6;
+	@FXML private CheckBox check2_7;
+	@FXML private CheckBox check2_8;
+	@FXML private CheckBox check3_0;
+	@FXML private CheckBox check3_1;
+	@FXML private CheckBox check3_2;
+	@FXML private CheckBox check3_3;
+	@FXML private CheckBox check3_4;
+	@FXML private CheckBox check3_5;
+	@FXML private CheckBox check3_6;
+	@FXML private CheckBox check3_7;
+	@FXML private CheckBox check3_8;
+	@FXML private CheckBox check4_0;
+	@FXML private CheckBox check4_1;
+	@FXML private CheckBox check4_2;
+	@FXML private CheckBox check4_3;
+	@FXML private CheckBox check4_4;
+	@FXML private CheckBox check4_5;
+	@FXML private CheckBox check4_6;
+	@FXML private CheckBox check4_7;
+	@FXML private CheckBox check4_8;
+	@FXML private CheckBox check5_0;
+	@FXML private CheckBox check5_1;
+	@FXML private CheckBox check5_2;
+	@FXML private CheckBox check5_3;
+	@FXML private CheckBox check5_4;
+	@FXML private CheckBox check5_5;
+	@FXML private CheckBox check5_6;
+	@FXML private CheckBox check5_7;
+	@FXML private CheckBox check5_8;
+	@FXML private CheckBox check6_0;
+	@FXML private CheckBox check6_1;
+	@FXML private CheckBox check6_2;
+	@FXML private CheckBox check6_3;
+	@FXML private CheckBox check6_4;
+	@FXML private CheckBox check6_5;
+	@FXML private CheckBox check6_6;
+	@FXML private CheckBox check6_7;
+	@FXML private CheckBox check6_8;
+	@FXML private CheckBox check7_0;
+	@FXML private CheckBox check7_1;
+	@FXML private CheckBox check7_2;
+	@FXML private CheckBox check7_3;
+	@FXML private CheckBox check7_4;
+	@FXML private CheckBox check7_5;
+	@FXML private CheckBox check7_6;
+	@FXML private CheckBox check7_7;
+	@FXML private CheckBox check7_8;
+	@FXML private CheckBox check8_0;
+	@FXML private CheckBox check8_1;
+	@FXML private CheckBox check8_2;
+	@FXML private CheckBox check8_3;
+	@FXML private CheckBox check8_4;
+	@FXML private CheckBox check8_5;
+	@FXML private CheckBox check8_6;
+	@FXML private CheckBox check8_7;
+	@FXML private CheckBox check8_8;
 
 	public void inizializeCheckBoxesMatrix() {
 		checkBoxes[0][0] = check0_0;
@@ -402,5 +324,14 @@ public class Controller implements Initializable {
 		checkBoxes[8][6] = check8_6;
 		checkBoxes[8][7] = check8_7;
 		checkBoxes[8][8] = check8_8;
+		setChechBoxesToDefault();
+	}
+
+	private void setChechBoxesToDefault() {
+		for (int i = 0; i < 9; i++) {
+			for (int j = 0; j < 9; j++) {
+				checkBoxes[i][j].setEffect(new Shadow(0, Color.WHITE));
+			}
+		}
 	}
 }

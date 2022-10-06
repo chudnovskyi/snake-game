@@ -58,15 +58,10 @@ public class Snake extends Thread implements Serializable {
 	public void run() {
 		try {
 			startingInizializations();
-			pauseThreadIfPaused();
-			updateStartingTime();
 			while (true) {
-				sleep();
+				sleepBetweenMoves();
 				pauseThreadIfPaused();
-				Point head = snake.get(0);
-				Point newPoint = head.copyThisPoint();
-				snake.add(1, newPoint); // adding newPoint to the place where the head was before moving
-				changeHeadDirectionAndMove(head);
+				moveSnake();
 			}
 		} catch (InterruptedException ie) {
 		}
@@ -77,11 +72,17 @@ public class Snake extends Thread implements Serializable {
 			startingTime = Instant.now();
 		if (apple == null) // Will not allow a new apple to be created after deserialization
 			newAppleInizialization(snake.get(0));
-		else if (!isLose) // Won't show apple after restart due to loss
-			CheckBoxMachine.getExchanger().exchange(new SimpleEntry<Point, Boolean>(apple, null));
-		for (Point point : snake) {
-			CheckBoxMachine.getExchanger().exchange(new SimpleEntry<Point, Boolean>(point, true));
-		}
+		else if (!isLose) // Will show apple after restart
+			CheckBoxAppleMachine.getExchanger().exchange(apple);
+		snakeInizialization();
+	}
+
+	private void moveSnake() throws InterruptedException {
+		Point head = snake.get(0);
+		Point newPoint = head.copyThisPoint();
+		snake.add(1, newPoint); // adding newPoint to the place where the head was before moving
+		CheckBoxOnMachine.getExchanger().exchange(new SimpleEntry<Point, Boolean>(newPoint, null));
+		changeHeadDirectionAndMove(head);
 	}
 
 	private void changeHeadDirectionAndMove(Point head) throws InterruptedException {
@@ -96,7 +97,7 @@ public class Snake extends Thread implements Serializable {
 			head.moveLeft();
 		}
 		eatApple(head); // Eats an apple if the head is at the apple coordinate
-		CheckBoxMachine.getExchanger().exchange(new SimpleEntry<Point, Boolean>(head, true));
+		CheckBoxOnMachine.getExchanger().exchange(new SimpleEntry<Point, Boolean>(head, true));
 	}
 
 	private void eatApple(Point head) throws InterruptedException {
@@ -107,7 +108,8 @@ public class Snake extends Thread implements Serializable {
 		} else { // if its not - removing snake's tail
 			Point tail = snake.get(snake.size() - 1);
 			snake.remove(snake.size() - 1);
-			CheckBoxMachine.getExchanger().exchange(new SimpleEntry<Point, Boolean>(tail, false));
+			CheckBoxOFFMachine.getExchanger().exchange(tail);
+			Thread.sleep(5); // Will not let you eat the last point of the tail
 		}
 	}
 
@@ -115,7 +117,22 @@ public class Snake extends Thread implements Serializable {
 	// apple appears in the place of a new head and the program crushes
 	private void newAppleInizialization(Point head) throws InterruptedException {
 		apple = AppleGenerator.generate(head);
-		CheckBoxMachine.getExchanger().exchange(new SimpleEntry<Point, Boolean>(apple, null));
+		CheckBoxAppleMachine.getExchanger().exchange(apple);
+	}
+	
+	private void snakeInizialization() throws InterruptedException {
+		CheckBoxOnMachine.getExchanger().exchange(new SimpleEntry<Point, Boolean>(snake.get(0), true));
+		for (Point point : snake.subList(1, snake.size())) {
+			CheckBoxOnMachine.getExchanger().exchange(new SimpleEntry<Point, Boolean>(point, false));
+		}
+	}
+	
+	private void sleepBetweenMoves() {
+		try {
+			Thread.sleep(sleepTime);
+		} catch (InterruptedException e) {
+			interrupt();
+		}
 	}
 
 	private void speedUpSnake() {
@@ -134,10 +151,10 @@ public class Snake extends Thread implements Serializable {
 	}
 
 	public void restart() throws InterruptedException {
-		CheckBoxMachine.getExchanger().exchange(new SimpleEntry<Point, Boolean>(apple, false));
+		CheckBoxOFFMachine.getExchanger().exchange(apple);
 		for (int i = 0; i < 9; i++) {
 			for (int j = 0; j < 9; j++) {
-				CheckBoxMachine.getExchanger().exchange(new SimpleEntry<Point, Boolean>(new Point(i, j), false));
+				CheckBoxOFFMachine.getExchanger().exchange(new Point(i, j));
 			}
 		}
 		updateStartingTime();
@@ -158,14 +175,6 @@ public class Snake extends Thread implements Serializable {
 			}
 		} finally {
 			lock.unlock();
-		}
-	}
-
-	private void sleep() {
-		try {
-			Thread.sleep(sleepTime);
-		} catch (InterruptedException e) {
-			interrupt();
 		}
 	}
 

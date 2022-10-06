@@ -36,6 +36,7 @@ public class Point implements Serializable {
 	public void moveRight() {
 		x++;
 	}
+	
 
 	public Point copyThisPoint() {
 		return new Point(x, y);

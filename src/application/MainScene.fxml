@@ -425,18 +425,23 @@
       <Button layoutX="227.0" layoutY="276.0" mnemonicParsing="false" onAction="#down" prefHeight="25.0" prefWidth="50.0" text="down" />
       <Button layoutX="253.0" layoutY="250.0" mnemonicParsing="false" onAction="#right" prefHeight="25.0" prefWidth="50.0" text="right" />
       <Button layoutX="203.0" layoutY="250.0" mnemonicParsing="false" onAction="#left" prefHeight="25.0" prefWidth="50.0" text="left" />
-      <Text fx:id="youLose" fill="RED" layoutX="157.0" layoutY="96.0" stroke="RED" strokeType="OUTSIDE" strokeWidth="0.0" textAlignment="CENTER" wrappingWidth="191.7366943359375">
+      <Text fx:id="youLose" fill="#d41717" layoutX="157.0" layoutY="96.0" stroke="#d41717" strokeType="OUTSIDE" strokeWidth="0.0" textAlignment="CENTER" wrappingWidth="191.7366943359375">
          <font>
             <Font size="60.0" />
          </font>
       </Text>
-      <ListView fx:id="listView" editable="true" layoutX="11.0" layoutY="16.0" prefHeight="252.0" prefWidth="142.0" />
+      <ListView fx:id="listView" editable="true" layoutX="11.0" layoutY="46.0" prefHeight="222.0" prefWidth="142.0" />
       <Label layoutX="155.0" layoutY="10.0" prefHeight="207.0" prefWidth="202.0" />
-      <Button layoutX="11.0" layoutY="268.0" mnemonicParsing="false" onAction="#clearLeaderboard" prefHeight="26.0" prefWidth="142.0" text="Clear leaderboard" />
-      <ImageView fitHeight="152.0" fitWidth="152.0" layoutX="306.0" layoutY="181.0" rotate="-8.7">
+      <Button layoutX="11.0" layoutY="268.0" mnemonicParsing="false" onAction="#clearLeaderboard" prefHeight="26.0" prefWidth="142.0" text="Clear" />
+      <ImageView fitHeight="152.0" fitWidth="152.0" layoutX="314.0" layoutY="180.0" rotate="-8.7">
          <image>
             <Image url="@snake.png" />
          </image>
       </ImageView>
+      <Text layoutX="11.0" layoutY="26.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Scoreboard" textAlignment="CENTER" textOrigin="CENTER" wrappingWidth="142.4000000000001">
+         <font>
+            <Font size="26.0" />
+         </font>
+      </Text>
    </children>
 </AnchorPane>
