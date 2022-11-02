@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.event.EventHandler;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -12,7 +13,7 @@ import javafx.scene.Scene;
 import javafx.scene.image.Image;
 import javafx.scene.input.KeyEvent;
 import javafx.stage.Stage;
-import javafx.stage.StageStyle;
+import javafx.stage.WindowEvent;
 
 public class MainFX extends Application {
 	private static Controller controller;
@@ -24,7 +25,7 @@ public class MainFX extends Application {
 	public static void main(String[] args) {
 		launch(args);
 	}
-
+	
 	@Override
 	public void start(Stage stage) throws Exception {
 		FXMLLoader loader = new FXMLLoader(getClass().getResource(FXML_FILE));
@@ -34,15 +35,30 @@ public class MainFX extends Application {
 		Image image = new Image("icon.png");
 		stage.getIcons().add(image);
 		stage.setResizable(false);
-		stage.initStyle(StageStyle.UNDECORATED); // removing minimize, maximize and close buttons
 
+		setUnclosable(stage);
 		controllerInizialization(loader);
 		keyEventInizialization(scene);
 		machinesInizialization();
 		snakeInizialization();
-
+		
 		stage.setScene(scene);
 		stage.show();
+	}
+	
+	private void setUnclosable(Stage stage) {
+		Platform.setImplicitExit(false);
+		stage.setOnCloseRequest(new EventHandler<WindowEvent>() {
+			@Override
+			public void handle(WindowEvent event) {
+				controller.saveAndExit(null);
+			}
+		});
+	}
+	
+	private void controllerInizialization(FXMLLoader loader) {
+		controller = loader.getController();
+		controller.FXMLInizialization();
 	}
 
 	private void keyEventInizialization(Scene scene) {
@@ -63,12 +79,7 @@ public class MainFX extends Application {
 			}
 		});
 	}
-
-	private void controllerInizialization(FXMLLoader loader) {
-		controller = loader.getController();
-		controller.inizializeCheckBoxesMatrix();
-	}
-
+	
 	private void machinesInizialization() {
 		CheckBoxAppleMachine.instance();
 		CheckBoxOnMachine.instance();
@@ -87,6 +98,9 @@ public class MainFX extends Application {
 		}
 		snake.setDaemon(true);
 		snake.setName("Snake");
+		controller.difficultInizialization();
+		if (snake.isGameStarted())
+			controller.setDifficultDisable();
 		snake.start();
 	}
 

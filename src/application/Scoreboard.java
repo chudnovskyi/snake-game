@@ -59,7 +59,7 @@ public abstract class Scoreboard {
 			String[] term = result.split(",");
 			long ms = Long.parseLong(term[0]);
 			int points = Integer.parseInt(term[1]);
-			newScoreboard[i] = String.format("%d points | %ds %dms", points, ms / 1000, ms % 1000);
+			newScoreboard[i] = String.format("%d points | %d.%d sec", points, ms / 1000, (ms % 1000) / 100);
 			i++;
 		}
 		return newScoreboard;

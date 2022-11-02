@@ -29,6 +29,7 @@ public class CheckBoxAppleMachine extends Thread {
 				synchronized (MainFX.class) {
 					controller.setAppleCheckBoxOn(applePoint);
 				}
+				controller.setCurrentSpeed(Snake.instance().getSpeed());
 			} catch (InterruptedException ie) {
 				controller.setYouLose();
 			}

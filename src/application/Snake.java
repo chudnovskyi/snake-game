@@ -12,22 +12,34 @@ import java.util.concurrent.locks.ReentrantLock;
 
 @SuppressWarnings("serial")
 public class Snake extends Thread implements Serializable {
+	private Difficulties difficult;
 	private Directions currentDirection;
 	private Directions tempDirection;
 	private Instant startingTime;
 	private long playingTime;
-	private int sleepTime;
+	private Integer sleepTime;
 	private boolean isLose;
 
 	private static Lock lock = new ReentrantLock();
 	private static Condition condition = lock.newCondition();
+	private static volatile boolean isPaused = true;
 
 	private List<Point> snake;
 	private Point apple;
 	private int points;
 
-	private static volatile boolean isPaused = true;
 	private static Snake snakeInstance;
+
+	{
+		setEasyMode();
+		currentDirection = Directions.RIGHT;
+		tempDirection = Directions.RIGHT;
+		snake = new ArrayList<>(List.of(new Point(3, 4), new Point(2, 4), new Point(1, 4)));
+		isLose = false;
+	}
+
+	private Snake() {
+	}
 
 	public static Snake instance() {
 		if (snakeInstance == null) {
@@ -36,53 +48,44 @@ public class Snake extends Thread implements Serializable {
 		return snakeInstance;
 	}
 
-	public static Snake setInstance(Snake snake) {
+	public static void setInstance(Snake snake) {
 		if (snakeInstance == null) {
 			snakeInstance = snake;
 		}
-		return snakeInstance;
-	}
-
-	{
-		currentDirection = Directions.RIGHT;
-		tempDirection = Directions.RIGHT;
-		snake = new ArrayList<>(List.of(new Point(3, 4), new Point(2, 4), new Point(1, 4)));
-		sleepTime = 800;
-		isLose = false;
-	}
-
-	private Snake() {
 	}
 
 	@Override
 	public void run() {
 		try {
-			startingInizializations();
+			snakeInizialization();
+			appleInizialization();
 			while (true) {
 				sleepBetweenMoves();
-				pauseThreadIfPaused();
+				pauseGameIfPaused();
 				moveSnake();
 			}
 		} catch (InterruptedException ie) {
 		}
 	}
 
-	private void startingInizializations() throws InterruptedException {
-		if (startingTime == null)
-			startingTime = Instant.now();
-		if (apple == null) // Will not allow a new apple to be created after deserialization
-			newAppleInizialization(snake.get(0));
-		else if (!isLose) // Will show apple after restart
-			CheckBoxAppleMachine.getExchanger().exchange(apple);
-		snakeInizialization();
-	}
-
 	private void moveSnake() throws InterruptedException {
 		Point head = snake.get(0);
+		addNewPoint(head);
+		changeHeadDirectionAndMove(head);
+
+		if (head.equals(apple)) {
+			selectHeadCheckBox(head);
+			eatApple(); // if head eats apple - nothing will happen with snake coordinates
+		} else {
+			removeTail(); // if not - removing snake's tail
+			selectHeadCheckBox(head);
+		}
+	}
+
+	private void addNewPoint(Point head) throws InterruptedException {
 		Point newPoint = head.copyThisPoint();
 		snake.add(1, newPoint); // adding newPoint to the place where the head was before moving
-		CheckBoxOnMachine.getExchanger().exchange(new SimpleEntry<Point, Boolean>(newPoint, null));
-		changeHeadDirectionAndMove(head);
+		repaintCheckBox(newPoint);
 	}
 
 	private void changeHeadDirectionAndMove(Point head) throws InterruptedException {
@@ -96,37 +99,21 @@ public class Snake extends Thread implements Serializable {
 		} else if (currentDirection == Directions.LEFT) {
 			head.moveLeft();
 		}
-		eatApple(head); // Eats an apple if the head is at the apple coordinate
-		CheckBoxOnMachine.getExchanger().exchange(new SimpleEntry<Point, Boolean>(head, true));
 	}
 
-	private void eatApple(Point head) throws InterruptedException {
-		if (head.equals(apple)) { // if head eats apple - nothing will happen with snake coordinates
-			points++;
-			newAppleInizialization(head);
-			speedUpSnake();
-		} else { // if its not - removing snake's tail
-			Point tail = snake.get(snake.size() - 1);
-			snake.remove(snake.size() - 1);
-			CheckBoxOFFMachine.getExchanger().exchange(tail);
-			Thread.sleep(5); // Will not let you eat the last point of the tail
-		}
+	private void eatApple() throws InterruptedException {
+		points++;
+		speedUpSnake();
+		generateNewApple();
 	}
 
-	// I pass "head" to the method to prevent a rare situation when a new
-	// apple appears in the place of a new head and the program crushes
-	private void newAppleInizialization(Point head) throws InterruptedException {
-		apple = AppleGenerator.generate(head);
-		CheckBoxAppleMachine.getExchanger().exchange(apple);
+	private void removeTail() throws InterruptedException {
+		Point tail = snake.get(snake.size() - 1);
+		snake.remove(snake.size() - 1);
+		deselectCheckBox(tail);
+		Thread.sleep(5); // Gives the tail enough time to avoid the head
 	}
-	
-	private void snakeInizialization() throws InterruptedException {
-		CheckBoxOnMachine.getExchanger().exchange(new SimpleEntry<Point, Boolean>(snake.get(0), true));
-		for (Point point : snake.subList(1, snake.size())) {
-			CheckBoxOnMachine.getExchanger().exchange(new SimpleEntry<Point, Boolean>(point, false));
-		}
-	}
-	
+
 	private void sleepBetweenMoves() {
 		try {
 			Thread.sleep(sleepTime);
@@ -136,9 +123,7 @@ public class Snake extends Thread implements Serializable {
 	}
 
 	private void speedUpSnake() {
-		if (sleepTime > 700)
-			sleepTime -= 50;
-		else if (sleepTime > 600)
+		if (sleepTime > 600)
 			sleepTime -= 40;
 		else if (sleepTime > 500)
 			sleepTime -= 30;
@@ -146,94 +131,165 @@ public class Snake extends Thread implements Serializable {
 			sleepTime -= 20;
 		else if (sleepTime > 300)
 			sleepTime -= 10;
-		else
+		else if (sleepTime > 200)
 			sleepTime -= 5;
+		else
+			sleepTime--;
+	}
+
+	private void snakeInizialization() throws InterruptedException {
+		selectHeadCheckBox(snake.get(0));
+		for (Point point : snake.subList(1, snake.size())) {
+			selectBodyCheckBox(point);
+		}
+	}
+
+	private void appleInizialization() throws InterruptedException {
+		if (apple == null) // Will not allow a new apple to be created after deserialization
+			generateNewApple();
+		else if (!isLose) // Will show apple after restart
+			selectAppleCheckBox(apple);
+	}
+
+	private void generateNewApple() throws InterruptedException {
+		apple = AppleGenerator.generate();
+		selectAppleCheckBox(apple);
+	}
+
+	private void pauseGameIfPaused() throws InterruptedException {
+		if (Snake.isPaused()) {
+			lock.lock();
+			try {
+				condition.await();
+			} finally {
+				lock.unlock();
+			}
+		}
+	}
+
+	private void refreshPlayingTime() {
+		playingTime = 0;
+	}
+
+	private void updateStartingTime() {
+		startingTime = Instant.now();
 	}
 
 	public void restart() throws InterruptedException {
-		CheckBoxOFFMachine.getExchanger().exchange(apple);
-		for (int i = 0; i < 9; i++) {
-			for (int j = 0; j < 9; j++) {
-				CheckBoxOFFMachine.getExchanger().exchange(new Point(i, j));
+		for (int i = 0; i < Field.X_LENGTH; i++) {
+			for (int j = 0; j < Field.Y_LENGTH; j++) {
+				deselectCheckBox(new Point(i, j));
 			}
 		}
+		
 		updateStartingTime();
 		refreshPlayingTime();
 		Field.clearField();
-
+		
 		snakeInstance.interrupt();
 		snakeInstance = new Snake();
-		Snake.setPause(true);
+		Snake.setPaused(true);
+		
+		if (difficult == Difficulties.EASY) {
+			snakeInstance.setEasyMode();
+		} else if (difficult == Difficulties.HARD) {
+			snakeInstance.setHardMode();
+		}
+		
 		snakeInstance.start();
 	}
 
-	private void pauseThreadIfPaused() throws InterruptedException {
-		lock.lock();
-		try {
-			if (isPaused) {
-				condition.await();
+	public static void resumeGame() {
+		if (Snake.isPaused()) {
+			lock.lock();
+			try {
+				condition.signalAll();
+				snakeInstance.updateStartingTime();
+			} finally {
+				lock.unlock();
 			}
-		} finally {
-			lock.unlock();
 		}
 	}
 
-	public int getPoints() {
-		return points;
-	}
-
-	public Directions getSnakeDirection() {
-		return currentDirection;
-	}
-
-	public void setSnakeDirection(Directions snakeDirection) {
-		this.tempDirection = snakeDirection;
-	}
-
-	public Long getPlayingTime() {
-		return playingTime;
+	public boolean isGameStarted() {
+		return startingTime != null;
 	}
 
 	public void updatePlayingTime() {
 		playingTime += Duration.between(startingTime, Instant.now()).toMillis();
 	}
 
-	public void refreshPlayingTime() {
-		playingTime = 0;
+	public int getPoints() {
+		return points;
 	}
 
-	public void updateStartingTime() {
-		startingTime = Instant.now();
+	public double getSpeed() {
+		return sleepTime;
 	}
 
-	public static Lock getLock() {
-		return lock;
+	public Difficulties getDifficult() {
+		return difficult;
 	}
 
-	public static Condition getCondition() {
-		return condition;
+	public Directions getSnakeDirection() {
+		return currentDirection;
+	}
+
+	public Long getPlayingTime() {
+		return playingTime;
+	}
+
+	public void setSnakeDirection(Directions snakeDirection) {
+		this.tempDirection = snakeDirection;
+	}
+
+	public static void setPaused(boolean isCansel) {
+		Snake.isPaused = isCansel;
+	}
+	
+
+	public void setLose(boolean isLose) {
+		this.isLose = isLose;
+	}
+
+	public void setEasyMode() {
+		difficult = Difficulties.EASY;
+		if (!isGameStarted())
+			sleepTime = 700;
+	}
+
+	public void setHardMode() {
+		difficult = Difficulties.HARD;
+		if (!isGameStarted())
+			sleepTime = 200;
 	}
 
 	public static boolean isPaused() {
 		return isPaused;
 	}
 
-	public static void setPause(boolean isCansel) {
-		Snake.isPaused = isCansel;
-	}
-
 	public boolean isLose() {
 		return isLose;
 	}
 
-	public void setLose(boolean isLose) {
-		this.isLose = isLose;
+	private void selectHeadCheckBox(Point point) throws InterruptedException {
+		CheckBoxOnMachine.getExchanger().exchange(new SimpleEntry<Point, Boolean>(point, true));
 	}
 
-	@SuppressWarnings("unused")
-	private void printDetails() { // method for testing current field and snake
-		Field.printMatrix();
-		snake.forEach(System.out::println);
+	private void selectBodyCheckBox(Point point) throws InterruptedException {
+		CheckBoxOnMachine.getExchanger().exchange(new SimpleEntry<Point, Boolean>(point, false));
+	}
+
+	private void repaintCheckBox(Point point) throws InterruptedException {
+		CheckBoxOnMachine.getExchanger().exchange(new SimpleEntry<Point, Boolean>(point, null));
+	}
+
+	private void deselectCheckBox(Point point) throws InterruptedException {
+		CheckBoxOFFMachine.getExchanger().exchange(point);
+	}
+
+	private void selectAppleCheckBox(Point point) throws InterruptedException {
+		CheckBoxAppleMachine.getExchanger().exchange(point);
 	}
 
 	@Override
@@ -244,4 +300,8 @@ public class Snake extends Thread implements Serializable {
 
 enum Directions {
 	UP, DOWN, RIGHT, LEFT
+}
+
+enum Difficulties {
+	EASY, HARD
 }
