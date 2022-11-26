@@ -6,6 +6,8 @@ import java.io.ObjectOutputStream;
 import java.net.URL;
 import java.util.ResourceBundle;
 
+import enums.Difficulties;
+import enums.Directions;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -24,6 +26,7 @@ import javafx.scene.text.Text;
 import javafx.stage.Stage;
 
 public class Controller implements Initializable {
+	
 	@FXML private Text youLose;
 	@FXML private Text currentSpeed;
 	@FXML private AnchorPane scenePane;
@@ -68,11 +71,12 @@ public class Controller implements Initializable {
 	
 	@FXML 
 	private void resume(ActionEvent e) {
-		if (resumeButton.getText().equals("Start"))
+		if (resumeButton.getText().equals("Start")) {
 			resumeButton.setText("Resume");
+			setDifficultDisable();
+		}
 		Snake.resumeGame();
 		setArrowsEnable();
-		setDifficultDisable();
 		Snake.setPaused(false);
 		pauseButton.setDisable(false);
 		resumeButton.setDisable(true);
@@ -85,6 +89,7 @@ public class Controller implements Initializable {
 			Snake.instance().updatePlayingTime();
 			pauseButton.setDisable(true);
 			resumeButton.setDisable(false);
+			setArrowsDisable();
 		}
 	}
 	
@@ -171,16 +176,15 @@ public class Controller implements Initializable {
 		checkBoxes[y][x].setEffect(new Shadow(0, Color.WHITE));
 	}
 
-	private Image appleImage = new Image("https://icons.iconarchive.com/icons/alex-t/fresh-fruit/24/apple-icon.png");
+	private Image appleImage;
 	
 	public void setAppleCheckBoxOn(Point p) {
 		int x = p.getX();
 		int y = p.getY();
-		
-		if (appleImage.isError())
-			setCheckBoxColor(checkBoxes[y][x], Color.RED);
-		else
-			checkBoxes[y][x].setEffect(new ImageInput(appleImage, -2, -2));
+
+		if (appleImage == null)
+			appleImage = new Image("apple-icon.png");
+		checkBoxes[y][x].setEffect(new ImageInput(appleImage, -2, -2));
 	}
 
 	// we need this method to color a point from head

@@ -1,6 +1,7 @@
 package application;
 
 public abstract class Field {
+	
 	public static final int X_LENGTH = 12;
 	public static final int Y_LENGTH = 12;
 	private static int[][] field = new int[X_LENGTH][Y_LENGTH];

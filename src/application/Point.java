@@ -5,6 +5,7 @@ import java.util.Objects;
 
 @SuppressWarnings("serial")
 public class Point implements Serializable {
+	
 	private int x;
 	private int y;
 

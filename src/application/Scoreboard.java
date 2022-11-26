@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public abstract class Scoreboard {
+	
 	public static void append(Long duration, Integer points) {
 		try (PrintStream writer = new PrintStream(new FileOutputStream(MainFX.getScoreboardFile(), true))) {
 			writer.println(String.format("%d,%d", duration, points));
@@ -42,20 +43,15 @@ public abstract class Scoreboard {
 			else if (amount1 < amount2)
 				return 1;
 			else {
-				if (time1 > time2)
-					return 1;
-				else if (time1 < time2)
-					return -1;
-				else
-					return 0;
+				return Long.compare(time1, time2);
 			}
 		});
 	}
-	
-	private static String[] parseToArray(List<String> scoreboard) {
-		String[] newScoreboard = new String[scoreboard.size()];
+		
+	private static String[] parseToArray(List<String> list) {
+		String[] newScoreboard = new String[list.size()];
 		int i = 0;
-		for (String result : scoreboard) {
+		for (String result : list) {
 			String[] term = result.split(",");
 			long ms = Long.parseLong(term[0]);
 			int points = Integer.parseInt(term[1]);
@@ -66,7 +62,7 @@ public abstract class Scoreboard {
 	}
 
 	public static void clear() {
-		try (PrintStream writer = new PrintStream(new FileOutputStream(MainFX.getScoreboardFile()))) {
+		try (FileOutputStream writer = new FileOutputStream(MainFX.getScoreboardFile())) {
 		} catch (IOException ioe) {
 		}
 	}

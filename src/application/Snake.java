@@ -10,8 +10,15 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import enums.Difficulties;
+import enums.Directions;
+import machines.CheckBoxAppleMachine;
+import machines.CheckBoxOFFMachine;
+import machines.CheckBoxOnMachine;
+
 @SuppressWarnings("serial")
 public class Snake extends Thread implements Serializable {
+	
 	private Difficulties difficult;
 	private Directions currentDirection;
 	private Directions tempDirection;
@@ -105,7 +112,7 @@ public class Snake extends Thread implements Serializable {
 		points++;
 		speedUpSnake();
 		generateNewApple();
-	}
+	}	
 
 	private void removeTail() throws InterruptedException {
 		Point tail = snake.get(snake.size() - 1);
@@ -296,12 +303,4 @@ public class Snake extends Thread implements Serializable {
 	public String toString() {
 		return "Snake size: " + snake.size();
 	}
-}
-
-enum Directions {
-	UP, DOWN, RIGHT, LEFT
-}
-
-enum Difficulties {
-	EASY, HARD
 }

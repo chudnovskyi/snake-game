@@ -14,13 +14,17 @@ import javafx.scene.image.Image;
 import javafx.scene.input.KeyEvent;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
+import machines.CheckBoxAppleMachine;
+import machines.CheckBoxOFFMachine;
+import machines.CheckBoxOnMachine;
 
 public class MainFX extends Application {
+	
 	private static Controller controller;
 
 	private static final String FXML_FILE = "MainScene.fxml";
-	private static final String SNAKE_FILE = "Snake.txt";
-	private static final String SCOREBOARD_FILE = "Scoreboard.txt";
+	private static final String SNAKE_FILE = "resources/Snake.txt";
+	private static final String SCOREBOARD_FILE = "resources/Scoreboard.txt";
 
 	public static void main(String[] args) {
 		launch(args);
